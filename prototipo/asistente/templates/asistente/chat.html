@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de tienda — Prototipo</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #334155;
+            --border: #334155;
+            --primary: #38bdf8;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --user-msg: #0ea5e9;
+            --bot-msg: #1e293b;
+            --success: #22c55e;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+        header p { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--text-muted); }
+        .tiendanube-status {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.35rem;
+            display: inline-block;
+        }
+        .tiendanube-status.connected {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+        .tiendanube-status.disconnected {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-muted);
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Columna chat */
+        .chat-column {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .msg {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: var(--user-msg);
+            color: #fff;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .msg.assistant {
+            align-self: flex-start;
+            background: var(--bot-msg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 0.25rem;
+        }
+        .msg .action-result {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(56, 189, 248, 0.15);
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            border-left: 3px solid var(--primary);
+        }
+        #form-container {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+        #form-container form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        #input-text {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1rem;
+        }
+        #input-text:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        #btn-send {
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #btn-send:hover { opacity: 0.9; }
+        #btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Columna visor - mitad de la pantalla */
+        .visor-column {
+            flex: 1;
+            min-width: 0;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .visor-preview {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .visor-preview.visible {
+            display: flex;
+        }
+        #preview-iframe {
+            flex: 1;
+            min-height: 280px;
+            border: none;
+            background: #fff;
+            width: 100%;
+            display: block;
+        }
+        .visor-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+        #visor-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .visor-empty {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .visor-card {
+            background: var(--surface2);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            border-left: 3px solid var(--primary);
+        }
+        .visor-card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+        }
+        .visor-card-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .visor-card-snippet {
+            font-family: 'Fira Mono', 'Consolas', monospace;
+            font-size: 0.7rem;
+            background: var(--bg);
+            padding: 0.5rem;
+            border-radius: 0.35rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-x: auto;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .visor-card-badge {
+            display: inline-block;
+            margin-top: 0.4rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.65rem;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .template-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .template-card {
+            flex: 1;
+            min-width: 140px;
+            max-width: 180px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .template-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+        }
+        .template-card img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            display: block;
+        }
+        .template-card-body { padding: 0.5rem 0.6rem; }
+        .template-card-name { font-weight: 600; font-size: 0.85rem; }
+        .template-card-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .addon-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .addon-chip {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: inherit;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .addon-chip:hover {
+            border-color: var(--primary);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .visor-column {
+                max-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Asistente para tu tienda</h1>
+        <p>Di qué necesitas: chatbot, validación, reconocimiento facial, envíos, pagos… Los cambios se reflejan en el visor.</p>
+        <div id="tiendanube-status" class="tiendanube-status disconnected" aria-live="polite">Comprobando conexión con Tiendanube…</div>
+    </header>
+
+    <div class="main-layout">
+        <div class="chat-column">
+            <div id="chat-container">
+                <div class="msg assistant">
+                    ¿Qué te gustaría vender? Cuéntame el tipo de tienda o productos que tienes en mente (por ejemplo: tienda de zapatos, ropa, electrónica).
+                </div>
+            </div>
+
+            <div id="form-container">
+                <form id="chat-form" action="{% url 'asistente:api_chat' %}" method="post">
+                    {% csrf_token %}
+                    <input type="text" id="input-text" name="message" placeholder="Escribe tu mensaje..." autocomplete="off" required>
+                    <button type="submit" id="btn-send">Enviar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="visor-column">
+            <div class="visor-preview" id="visor-preview" aria-label="Vista previa de la tienda">
+                <div class="visor-header">Vista previa de tu tienda</div>
+                <iframe id="preview-iframe" title="Vista previa de la tienda generada" sandbox="allow-same-origin"></iframe>
+            </div>
+            <div class="visor-header">Implementación</div>
+            <div id="visor-list">
+                <div class="visor-empty" id="visor-empty">Los cambios que apliques desde el chat aparecerán aquí.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const form = document.getElementById('chat-form');
+        const inputText = document.getElementById('input-text');
+        const btnSend = document.getElementById('btn-send');
+        const visorList = document.getElementById('visor-list');
+        const visorEmpty = document.getElementById('visor-empty');
+        const visorPreview = document.getElementById('visor-preview');
+        const previewIframe = document.getElementById('preview-iframe');
+
+        let messages = [];
+        let implementations = [];
+
+        (function checkTiendanubeStatus() {
+            const el = document.getElementById('tiendanube-status');
+            fetch('{% url "asistente:api_tiendanube_status" %}')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    el.classList.remove('connected', 'disconnected');
+                    if (data.connected && data.store) {
+                        el.classList.add('connected');
+                        el.textContent = 'Conectado a Tiendanube: ' + (data.store.name || data.store.id || '');
+                        if (data.counts && (data.counts.scripts > 0 || data.counts.carriers > 0)) {
+                            var parts = [];
+                            if (data.counts.scripts) parts.push(data.counts.scripts + ' scripts');
+                            if (data.counts.carriers) parts.push(data.counts.carriers + ' carriers');
+                            if (parts.length) el.textContent += ' — ' + parts.join(', ');
+                        }
+                        el.onclick = null;
+                        el.style.cursor = 'default';
+                    } else {
+                        el.classList.add('disconnected');
+                        el.textContent = data.error || 'Sin conectar a Tiendanube.';
+                        if (data.oauth_available) {
+                            el.innerHTML = 'Sin conectar. <a href="{% url "asistente:tiendanube_oauth_authorize" %}" style="color:inherit;text-decoration:underline;">Conectar con Tiendanube</a>';
+                            el.style.cursor = 'pointer';
+                        } else {
+                            el.textContent = (data.error || 'Sin conectar. Configura .env o usa OAuth.');
+                        }
+                    }
+                })
+                .catch(function() {
+                    el.classList.add('disconnected');
+                    el.textContent = 'Sin conectar a Tiendanube';
+                });
+        })();
+
+        function addMessage(role, content, actionResult, options) {
+            options = options || {};
+            const div = document.createElement('div');
+            div.className = 'msg ' + role;
+            let html = content.replace(/\n/g, '<br>');
+            if (actionResult && actionResult.message) {
+                html += '<div class="action-result">' + actionResult.message.replace(/\n/g, '<br>') + '</div>';
+            }
+            div.innerHTML = html;
+
+            if (options.templates && options.templates.length > 0) {
+                const wrap = document.createElement('div');
+                wrap.className = 'template-cards';
+                options.templates.forEach(function(t) {
+                    const card = document.createElement('div');
+                    card.className = 'template-card';
+                    card.dataset.send = t.id || 'minimal';
+                    card.dataset.label = 'Diseño ' + (t.name || t.id);
+                    card.innerHTML =
+                        (t.preview ? '<img src="' + escapeHtml(t.preview) + '" alt="">' : '') +
+                        '<div class="template-card-body">' +
+                        '<div class="template-card-name">' + escapeHtml(t.name || t.id) + '</div>' +
+                        (t.description ? '<div class="template-card-desc">' + escapeHtml(t.description) + '</div>' : '') +
+                        '</div>';
+                    wrap.appendChild(card);
+                });
+                div.appendChild(wrap);
+            }
+
+            if (options.addons && options.addons.length > 0) {
+                const wrap = document.createElement('div');
+                wrap.className = 'addon-chips';
+                options.addons.forEach(function(a) {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'addon-chip';
+                    chip.textContent = a.name;
+                    chip.dataset.send = a.name;
+                    wrap.appendChild(chip);
+                });
+                div.appendChild(wrap);
+            }
+
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            div.querySelectorAll('.template-card, .addon-chip').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    const text = this.dataset.send;
+                    const label = this.dataset.label;
+                    if (text) sendChoice(text, label);
+                });
+            });
+        }
+
+        function sendChoice(text, displayText) {
+            if (!text || !text.trim()) return;
+            messages.push({ role: 'user', content: text.trim() });
+            addMessage('user', (displayText && displayText.trim()) ? displayText.trim() : text.trim());
+            setLoading(true);
+            fetchReply();
+        }
+
+        async function fetchReply() {
+            try {
+                const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const res = await fetch('{% url "asistente:api_chat" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf,
+                    },
+                    body: JSON.stringify({ messages: messages }),
+                });
+                const data = await res.json();
+                if (data.error) {
+                    addMessage('assistant', 'Error: ' + data.error);
+                } else {
+                    messages.push({ role: 'assistant', content: data.reply });
+                    addMessage('assistant', data.reply, data.action_result || null, {
+                        templates: data.show_templates ? data.templates : [],
+                        addons: data.show_addons ? data.addons : [],
+                    });
+                    if (data.preview_path) {
+                        visorPreview.classList.add('visible');
+                        previewIframe.removeAttribute('srcdoc');
+                        previewIframe.src = '/templates-preview/' + data.preview_path;
+                    } else if (data.preview_url) {
+                        visorPreview.classList.add('visible');
+                        previewIframe.removeAttribute('srcdoc');
+                        previewIframe.src = data.preview_url;
+                    } else if (data.generated_page_html) {
+                        visorPreview.classList.add('visible');
+                        previewIframe.removeAttribute('src');
+                        previewIframe.srcdoc = data.generated_page_html;
+                    }
+                    if (data.action && data.action !== 'otro' && data.action_result) {
+                        addToVisor(data.action, data.action_result);
+                    }
+                }
+            } catch (err) {
+                addMessage('assistant', 'No se pudo conectar con el servidor. Revisa la consola.');
+                console.error(err);
+            }
+            setLoading(false);
+        }
+
+        function addToVisor(action, actionResult) {
+            const impl = actionResult && actionResult.detail && actionResult.detail.implementation;
+            if (!impl) return;
+
+            implementations.push({ action, ...impl, simulated: actionResult.detail.simulated });
+            visorEmpty.style.display = 'none';
+
+            const card = document.createElement('div');
+            card.className = 'visor-card';
+            const typeLabel = impl.type || 'config';
+            card.innerHTML =
+                '<div class="visor-card-type">' + escapeHtml(typeLabel) + '</div>' +
+                '<div class="visor-card-title">' + escapeHtml(impl.title) + '</div>' +
+                '<pre class="visor-card-snippet">' + escapeHtml(impl.snippet || '') + '</pre>' +
+                '<span class="visor-card-badge">' + (actionResult.detail.simulated ? 'Simulado' : 'Aplicado') + '</span>';
+            visorList.appendChild(card);
+            visorList.scrollTop = visorList.scrollHeight;
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function setLoading(on) {
+            btnSend.disabled = on;
+            inputText.disabled = on;
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const text = inputText.value.trim();
+            if (!text) return;
+
+            inputText.value = '';
+            messages.push({ role: 'user', content: text });
+            addMessage('user', text);
+
+            setLoading(true);
+            await fetchReply();
+        });
+    </script>
+</body>
+</html>

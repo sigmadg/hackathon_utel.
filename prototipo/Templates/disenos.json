@@ -1,0 +1,20 @@
+[
+  {
+    "id": "minimal",
+    "name": "Minimal",
+    "description": "Limpio y enfocado en el producto. Ideal para marcas que quieren que el producto hable por sí solo.",
+    "preview": "/static/asistente/templates/minimal.svg"
+  },
+  {
+    "id": "moderno",
+    "name": "Moderno",
+    "description": "Diseño actual con bloques grandes y llamados a la acción claros. Muy usado en moda y lifestyle.",
+    "preview": "/static/asistente/templates/moderno.svg"
+  },
+  {
+    "id": "tienda",
+    "name": "Tienda clásica",
+    "description": "Catálogo claro, categorías visibles y sensación de tienda tradicional. Perfecto para variedad de productos.",
+    "preview": "/static/asistente/templates/tienda.svg"
+  }
+]

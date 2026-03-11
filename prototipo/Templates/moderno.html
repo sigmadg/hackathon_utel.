@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{store_name}}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; }
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 3rem 2rem; text-align: center; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .tagline { color: #94a3b8; margin-bottom: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 2rem; max-width: 900px; margin: 0 auto; }
+        .card { background: #1e293b; padding: 1.25rem; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>{{store_name}}</h1>
+        <p class="tagline">{{tagline}}</p>
+    </div>
+    <div class="grid">
+        <div class="card">{{product1}}</div>
+        <div class="card">{{product2}}</div>
+        <div class="card">{{product3}}</div>
+    </div>
+</body>
+</html>

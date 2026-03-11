@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error al conectar con Tiendanube</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 500px; margin: 3rem auto; padding: 1rem; }
+        h1 { font-size: 1.25rem; color: #b91c1c; }
+        p { color: #374151; line-height: 1.6; }
+        a { color: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1>Error al conectar con Tiendanube</h1>
+    <p>{{ error }}</p>
+    <p><a href="{% url 'asistente:chat_page' %}">Volver al asistente</a></p>
+</body>
+</html>

@@ -1,0 +1,293 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------
+%  Propuesta de proyecto - Hackathon Tiendanube / Ecommerce
+%  Asistente inteligente para creación de tiendas (LLM)
+% --------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[9pt,a4paper,twocolumn,twoside]{rho-class/rho}
+\usepackage[spanish,es-nodecimaldot,es-noindentfirst]{babel}
+\usepackage{grffile}
+\graphicspath{{../}}
+
+%----------------------------------------------------------
+% Título
+%----------------------------------------------------------
+
+\doctype{Propuesta de Proyecto — Hackathon Ecommerce}
+\title{Asistente inteligente para configuración de tiendas}
+
+%----------------------------------------------------------
+% Autores (equipo)
+%----------------------------------------------------------
+
+\author[{\textasteriskcentered}]{Javier Rodríguez (Capitán)}
+\author[]{Gabriela Ordoñez}
+\author[]{Jonathan Medina}
+\author[]{Alfredo Peñaloza}
+\author[]{Alejandra Peña}
+\author[]{Víctor Hugo Mendieta}
+\author[]{Viviana Guardiola}
+
+%----------------------------------------------------------
+
+\affil[{\textasteriskcentered}]{Equipo multidisciplinario — Hackathon Tiendanube / Ecommerce}
+
+%----------------------------------------------------------
+
+\dates{Documento compilado el 10 de marzo de 2026}
+
+%----------------------------------------------------------
+
+\corres{\textsuperscript{\textasteriskcentered}Capitanía del equipo: Javier Rodríguez.}
+
+%----------------------------------------------------------
+
+\docinfo{Propuesta alineada con los objetivos del hackathon (fortalecer ecosistema Tiendanube, impulsar crecimiento de negocios digitales, reducir barreras de entrada al ecommerce) y con los criterios de la rúbrica de evaluación.}
+
+%----------------------------------------------------------
+
+\journalname{Hackathon Ecommerce}
+\vol{2026}
+
+%----------------------------------------------------------
+% Resumen y palabras clave
+%----------------------------------------------------------
+
+\begin{abstract}
+Se propone un prototipo funcional que utiliza un modelo de lenguaje (LLM) como asistente durante la creación y configuración de una tienda en línea. El usuario interactúa en lenguaje natural (por ejemplo, mediante un chat) para completar secciones de su tienda: activación de chatbots, integración de APIs de validación, reconocimiento facial u otras funcionalidades que el comercio requiera. El sistema interpreta la intención del usuario y automatiza la integración de servicios (APIs, webhooks, módulos de IA) en la tienda, reduciendo la fricción técnica y potenciando la empleabilidad de tecnologías emergentes en ecommerce. La solución se enmarca en el fortalecimiento del ecosistema Tiendanube, el crecimiento de negocios digitales y la reducción de barreras de entrada al comercio electrónico.
+\end{abstract}
+
+\keywords{LLM, ecommerce, Tiendanube, chatbot, APIs, reconocimiento facial, automatización, configuración de tienda}
+
+%----------------------------------------------------------
+
+\begin{document}
+
+    \maketitle
+    \thispagestyle{firststyle}
+
+%----------------------------------------------------------
+\section{Objetivos del hackathon}
+%----------------------------------------------------------
+
+El hackathon plantea desarrollar prototipos funcionales que utilicen tecnologías emergentes para potenciar las habilidades de los estudiantes hacia la empleabilidad en el futuro laboral. Los equipos deben alinear sus soluciones con al menos uno de los siguientes objetivos (figura \ref{fig:objetivos}):
+
+\begin{enumerate}
+    \item \textbf{Fortalecer el ecosistema Tiendanube.} Crear apps que mejoren ventas, operación y toma de decisiones para miles de tiendas.
+    \item \textbf{Impulsar el crecimiento de negocios digitales.} Ayudar a comercios activos a escalar mediante automatización, datos y mejores procesos.
+    \item \textbf{Reducir barreras de entrada al ecommerce.} Facilitar que nuevas personas emprendan en línea con soluciones simples y accesibles.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{"WhatsApp Image 2026-03-10 at 10.45.10 PM.jpeg"}
+    \caption{Objetivos del hackathon ecommerce (Tiendanube).}
+    \label{fig:objetivos}
+\end{figure}
+
+Nuestra propuesta impacta los tres ejes: un asistente basado en LLM que guía y automatiza la configuración de la tienda (chatbots, APIs, reconocimiento facial, etc.) fortalece el ecosistema al sumar capacidades avanzadas, impulsa el crecimiento al permitir automatización y mejores procesos, y reduce barreras al hacer que la integración técnica sea accesible mediante lenguaje natural.
+
+%----------------------------------------------------------
+\section{Propuesta de proyecto}
+%----------------------------------------------------------
+
+\subsection{Problema e idea central}
+
+Al crear una tienda en línea, el comerciante debe configurar múltiples secciones: diseño, pagos, envíos, chatbots, integraciones con APIs (validación de identidad, inventario, etc.), y en casos avanzados, reconocimiento facial u otras tecnologías. Esto exige conocimiento técnico o tiempo para seguir guías paso a paso. La propuesta consiste en un \textbf{asistente impulsado por un LLM} que acompaña al usuario durante la creación de su tienda: mediante un chat en lenguaje natural, el usuario describe lo que necesita (por ejemplo, ``quiero un chatbot que responda preguntas de productos'' o ``necesito validar identidad con reconocimiento facial''). El sistema interpreta la intención, propone flujos concretos y \textbf{automatiza la integración} de los componentes necesarios (APIs de validación, reconocimiento facial, chatbots, webhooks, etc.) en la tienda.
+
+\subsection{Componentes y alcance del prototipo}
+
+\begin{itemize}
+    \item \textbf{Chat con LLM:} interfaz de conversación donde el usuario indica qué quiere en su tienda; el LLM descompone la tarea y guía o ejecuta la configuración.
+    \item \textbf{Completado de secciones de tienda:} ejemplos incluyen activación y configuración de chatbots, integración de APIs de validación (p. ej. identidad o datos), y módulos de reconocimiento facial u otras capacidades que el cliente requiera.
+    \item \textbf{Automatización de integraciones:} uso de la API de Tiendanube/Nuvemshop, webhooks y flujos (p. ej. n8n o backend propio) para conectar servicios externos (APIs, IA, reconocimiento facial) sin que el usuario tenga que escribir código.
+    \item \textbf{Extensibilidad:} diseño que permita agregar más tipos de integraciones (pagos, envíos, analytics) bajo el mismo paradigma de ``pedirlo por chat y automatizarlo''.
+\end{itemize}
+
+\subsection{Alineación con objetivos del hackathon}
+
+\begin{itemize}
+    \item \textbf{Fortalecer el ecosistema Tiendanube:} la solución se integra con la API y el ecosistema de Tiendanube, añadiendo una capa de configuración inteligente que mejora la operación y la toma de decisiones.
+    \item \textbf{Impulsar el crecimiento de negocios digitales:} automatización y datos (vía APIs e IA) permiten a los comercios escalar con menos esfuerzo manual.
+    \item \textbf{Reducir barreras de entrada al ecommerce:} lenguaje natural y asistente reducen la curva de aprendizaje técnica para emprender en línea.
+\end{itemize}
+
+%----------------------------------------------------------
+\section{Rúbrica de evaluación}
+%----------------------------------------------------------
+
+La evaluación del proyecto se realiza según los criterios mostrados en la figura \ref{fig:rubrica}. A continuación se responde cada criterio de forma explícita, orientado al nivel \textbf{Destacado} donde aplica.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{"WhatsApp Image 2026-03-10 at 10.44.24 PM.jpeg"}
+    \caption{Rúbrica de evaluación del hackathon.}
+    \label{fig:rubrica}
+\end{figure}
+
+\subsection{1. Impacto y alineación con la problemática (hasta 20 pts)}
+
+\textbf{Problema validado con claridad; impacto potencial bien descrito y respaldado.}
+
+\begin{itemize}
+    \item \textbf{Problema:} La configuración técnica de una tienda (chatbots, APIs, reconocimiento facial, etc.) es una barrera para muchos emprendedores y pequeños comercios; requiere tiempo, documentación y en ocasiones soporte técnico.
+    \item \textbf{Evidencia y relevancia:} Miles de tiendas en Tiendanube se benefician de apps e integraciones; sin embargo, la activación y configuración siguen siendo mayormente manuales. Un asistente que interprete lenguaje natural y automatice integraciones tiene impacto directo en tiempo de configuración y en la adopción de funcionalidades avanzadas.
+    \item \textbf{Impacto potencial:} Reducción del tiempo de onboarding, mayor uso de chatbots y APIs de validación, y posibilidad de ofrecer reconocimiento facial u otras capacidades sin exigir conocimientos técnicos al comerciante.
+\end{itemize}
+
+\subsection{2. Innovación y aporte diferencial (hasta 20 pts)}
+
+\textbf{Solución disruptiva o altamente novedosa; aportes diferenciadores claros respecto a la competencia.}
+
+\begin{itemize}
+    \item \textbf{Novedad:} Combinar un LLM como orquestador de la configuración de la tienda con integraciones reales (APIs, reconocimiento facial, chatbots) no es estándar en el ecosistema actual; la mayoría de soluciones son apps puntuales o guías estáticas.
+    \item \textbf{Diferencial:} Un único punto de entrada (chat) para solicitar múltiples capacidades (chatbot, validación por API, reconocimiento facial, etc.) con automatización de la integración, en lugar de instalar y configurar cada app por separado.
+    \item \textbf{Contexto de mercado:} Se adapta al contexto Tiendanube/Nuvemshop y aprovecha la API y documentación existentes para generar flujos configurables de forma inteligente.
+\end{itemize}
+
+\subsection{3. Integración tecnológica y mérito técnico (hasta 20 pts)}
+
+\textbf{Prototipo con integración tecnológica sólida, validada y operativa; herramientas avanzadas o arquitecturas coherentes; resultados medibles y eficiencia en la ejecución.}
+
+\begin{itemize}
+    \item \textbf{Tecnologías emergentes:} Uso de LLM (IA generativa), integración con API de Tiendanube/Nuvemshop, posibles flujos con n8n u orquestación backend, APIs de validación y reconocimiento facial (IA/visión).
+    \item \textbf{Funcionamiento demostrable:} El prototipo integra al menos: (1) chat con LLM, (2) interpretación de intención para una o más secciones de tienda (p. ej. chatbot, API de validación), (3) pasos automatizados que reflejen la configuración en la tienda o en un backend de demostración.
+    \item \textbf{Arquitectura:} Diseño coherente entre frontend (chat), capa de orquestación (LLM + lógica de integración) y uso de APIs/webhooks; resultados verificables mediante demo y, donde aplique, métricas de éxito (p. ej. tareas completadas sin error).
+\end{itemize}
+
+\subsection{4. Funcionamiento del prototipo — UX, lógica y demo (hasta 20 pts)}
+
+\textbf{Solución escalable y fluida; lógica bien implementada; UX diseñada con intención (usabilidad, claridad, consistencia); demo clara y profesional que comunica el valor del proyecto.}
+
+\begin{itemize}
+    \item \textbf{UX:} Interfaz de chat clara, mensajes del asistente que guíen al usuario y confirmaciones cuando se complete una integración o sección; flujo comprensible para un usuario no técnico.
+    \item \textbf{Lógica:} El flujo desde el mensaje del usuario hasta la activación/configuración de un componente (chatbot, API, reconocimiento facial) es estable y reproducible en la demo.
+    \item \textbf{Demo:} Presentación que muestre (1) una conversación de ejemplo, (2) la selección o activación de al menos un tipo de integración (p. ej. chatbot o API de validación) y (3) el resultado en la tienda o en un panel de control, de forma fluida y profesional.
+\end{itemize}
+
+\subsection{5. Escalabilidad y viabilidad (hasta 20 pts)}
+
+\textbf{Viabilidad técnica confirmada; implementación inmediata posible; ruta sustentada y realista de escalabilidad; modelo técnico robusto con proyección de crecimiento.}
+
+\begin{itemize}
+    \item \textbf{Viabilidad técnica:} Uso de APIs documentadas (Tiendanube/Nuvemshop), LLMs disponibles vía API, y patrones estándar de integración (webhooks, OAuth) permiten una implementación real con los recursos del equipo y tiempos del hackathon.
+    \item \textbf{Escalabilidad:} Arquitectura modular: nuevos tipos de ``qué necesita el cliente'' se traducen en nuevos flujos de orquestación (más integraciones, más secciones de tienda) sin reescribir el núcleo del asistente.
+    \item \textbf{Proyección:} Posible extensión a más apps del ecosistema Tiendanube, más APIs de validación o de IA, y eventualmente despliegue como app o servicio dentro del ecosistema para miles de tiendas.
+\end{itemize}
+
+%----------------------------------------------------------
+\section{Análisis de implementación teórica}
+%----------------------------------------------------------
+
+\subsection{Flujo general}
+
+\begin{enumerate}
+    \item El usuario crea o edita su tienda y abre el asistente (chat).
+    \item Escribe en lenguaje natural lo que necesita (ej.: ``necesito un chatbot para preguntas frecuentes'', ``quiero validar clientes con reconocimiento facial'').
+    \item El LLM interpreta la intención, identifica la sección o capacidad afectada (chatbot, API de validación, reconocimiento facial, etc.) y opcionalmente pide aclaraciones.
+    \item El sistema ejecuta o guía los pasos de integración: llamadas a la API de Tiendanube, registro de webhooks, configuración de flujos (n8n o backend), y activación de servicios externos (APIs, modelo de reconocimiento facial).
+    \item Se confirma al usuario que la funcionalidad quedó activa y se muestra un resumen de lo configurado.
+\end{enumerate}
+
+\subsection{Componentes técnicos considerados}
+
+\begin{itemize}
+    \item \textbf{API Tiendanube/Nuvemshop:} recursos de tienda, productos, webhooks, scripts y aplicaciones; autenticación OAuth 2 (código de autorización); uso de la colección Postman y documentación oficial para pruebas y desarrollo.
+    \item \textbf{LLM:} modelo vía API (p. ej. OpenAI, Anthropic o equivalente local) para comprensión de intención y generación de pasos de configuración o mensajes al usuario.
+    \item \textbf{Backend/orquestación:} servicio que recibe la intención del LLM, traduce a acciones concretas (crear webhook, configurar script, llamar API de validación o de reconocimiento facial) y mantiene estado de la configuración de la tienda.
+    \item \textbf{APIs de validación y reconocimiento facial:} integración con proveedores que expongan APIs REST; el asistente configura credenciales y flujos (con consentimiento y cumplimiento normativo) para validación de identidad o reconocimiento facial según el caso de uso.
+    \item \textbf{Chatbots:} configuración de respuestas automáticas (p. ej. conectando con el LLM o con reglas) y su enlace con la tienda (Chat Nube, scripts o integración vía API).
+\end{itemize}
+
+\subsection{Cumplimiento normativo y seguridad}
+
+Se consideran webhooks y flujos alineados con buenas prácticas de privacidad (LGPD y normativa aplicable): uso de las URLs de webhook requeridas (store/redact, customers/redact, customers/data\_request) y documentación de pruebas con la colección Postman de LGPD \cite{tiendanube-api-utils} cuando la app maneje datos de tienda o clientes.
+
+%----------------------------------------------------------
+\section{Detalles técnicos del prototipo}
+%----------------------------------------------------------
+
+El prototipo implementado consiste en una aplicación web Django que expone un chat y un visor de vista previa de tienda. A continuación se describen los componentes y decisiones técnicas.
+
+\subsection{Stack tecnológico}
+
+\begin{itemize}
+    \item \textbf{Python 3.10+} y \textbf{Django 5}: servidor web, sesiones, API REST y plantillas.
+    \item \textbf{LLM}: integración con \textbf{OpenAI API} (opcional) o con \textbf{Ollama} local (p. ej. Qwen 2.5 Coder); sin API key el asistente responde por palabras clave.
+    \item \textbf{API Tiendanube}: cliente HTTP con base \texttt{https://api.tiendanube.com/2025-03/\{store\_id\}}, cabecera \texttt{Authentication: bearer <token>} y User-Agent; soporte OAuth 2 (código de autorización) para conectar la tienda desde la interfaz.
+    \item \textbf{Frontend}: HTML/CSS/JS en una sola plantilla (\texttt{chat.html}); layout en dos columnas (chat y visor); sin framework JS.
+\end{itemize}
+
+\subsection{Arquitectura y flujo}
+
+\begin{enumerate}
+    \item \textbf{Flujo guiado}: el primer mensaje del usuario (qué quiere vender) activa el flujo; a continuación se muestran tres diseños de plantilla (Minimal, Moderno, Tienda clásica) cargados desde \texttt{Templates/disenos.json}. Al elegir uno, se sirve la plantilla real correspondiente (p. ej. \texttt{odor-buyer-file/index.html}, \texttt{ecomshop/index.html}, \texttt{onlinesale/home.html}) en un iframe en el visor, vía la ruta \texttt{/templates-preview/<path>}.
+    \item \textbf{Chat y API}: \texttt{POST /api/chat/} recibe \texttt{messages} (lista de \texttt{role}/\texttt{content}); si el flujo guiado aplica, se responde con \texttt{reply}, \texttt{show\_templates}, \texttt{templates}, \texttt{show\_addons}, \texttt{addons}, y \texttt{preview\_path} o \texttt{generated\_page\_html} para el visor; en caso contrario se llama al LLM y, si el texto incluye una línea \texttt{ACCION: <nombre>}, se ejecuta la acción (chatbot, envíos, pagos, etc.) mediante \texttt{intent\_handler} y se devuelve \texttt{action\_result} con el detalle para el visor.
+    \item \textbf{Integración Tiendanube}: credenciales por sesión (OAuth) o por variables de entorno (\texttt{TIENDANUBE\_ACCESS\_TOKEN}, \texttt{TIENDANUBE\_STORE\_ID}). Endpoints utilizados: \texttt{store}, \texttt{products}, \texttt{orders}, \texttt{categories}, \texttt{customers}, \texttt{scripts}, \texttt{webhooks}, \texttt{coupons}, \texttt{shipping\_carriers}, \texttt{payment\_providers}. El estado de conexión se expone en \texttt{GET /api/tiendanube-status/}.
+\end{enumerate}
+
+\subsection{Estructura del código}
+
+\texttt{prototipo/config/}: configuración Django (\texttt{settings}, \texttt{urls}). \texttt{prototipo/asistente/}: app principal; \texttt{views.py} (chat, API chat, OAuth Tiendanube, vista previa de plantillas); \texttt{services/llm\_service.py} (OpenAI/Ollama); \texttt{services/tiendanube\_api.py} (cliente API y credenciales de sesión); \texttt{services/flow\_service.py} (flujo qué vender $\to$ diseño $\to$ addons y \texttt{preview\_path}); \texttt{services/page\_generator.py} (compilación de plantillas mínimas con placeholders); \texttt{services/intent\_handler.py} (ejecución de acciones: chatbot, envíos, pagos, etc.). Plantillas HTML en \texttt{asistente/templates/asistente/}; plantillas de vista previa en \texttt{prototipo/Templates/}.
+
+%----------------------------------------------------------
+\section{Configuración en local del prototipo}
+%----------------------------------------------------------
+
+Requisitos: Python 3.10 o superior, \texttt{pip}.
+
+\subsection{Pasos de instalación}
+
+\begin{enumerate}
+    \item Clonar o copiar el repositorio y ubicarse en la carpeta del prototipo:
+    \begin{verbatim}
+cd prototipo
+    \end{verbatim}
+    \item Crear y activar un entorno virtual:
+    \begin{verbatim}
+python -m venv .venv
+source .venv/bin/activate   # En Windows: .venv\Scripts\activate
+    \end{verbatim}
+    \item Instalar dependencias:
+    \begin{verbatim}
+pip install -r requirements.txt
+    \end{verbatim}
+    \item Copiar el archivo de ejemplo de variables de entorno y editarlo:
+    \begin{verbatim}
+cp .env.example .env
+    \end{verbatim}
+    \item Aplicar migraciones y arrancar el servidor:
+    \begin{verbatim}
+python manage.py migrate
+python manage.py runserver
+    \end{verbatim}
+    \item Abrir en el navegador: \texttt{http://127.0.0.1:8000/}.
+\end{enumerate}
+
+\subsection{Variables de entorno (.env)}
+
+\begin{itemize}
+    \item \texttt{DEBUG=1}, \texttt{DJANGO\_SECRET\_KEY}: desarrollo y clave secreta.
+    \item \texttt{OPENAI\_API\_KEY}, \texttt{OPENAI\_MODEL}: opcionales; si no se definen, el asistente usa respuestas por palabras clave.
+    \item \texttt{OLLAMA\_MODEL}, \texttt{OLLAMA\_BASE\_URL}: opcionales; si \texttt{OLLAMA\_MODEL} está definido (p. ej. \texttt{qwen2.5-coder:1.5b}), se usa Ollama en lugar de OpenAI. Requiere tener Ollama en ejecución y el modelo descargado (\texttt{ollama pull qwen2.5-coder:1.5b}).
+    \item \texttt{TIENDANUBE\_ACCESS\_TOKEN}, \texttt{TIENDANUBE\_STORE\_ID}: opcionales; permiten usar la API de Tiendanube sin OAuth.
+    \item \texttt{TIENDANUBE\_APP\_ID}, \texttt{TIENDANUBE\_CLIENT\_SECRET}, \texttt{TIENDANUBE\_REDIRECT\_URI}: para el flujo OAuth; la URL de redirección debe coincidir con la configurada en el panel de la app (p. ej. \texttt{http://localhost:8000/oauth/tiendanube/callback/}).
+    \item \texttt{TIENDANUBE\_API\_BASE}: base de la API (por defecto \texttt{https://api.tiendanube.com/2025-03}). \texttt{TIENDANUBE\_TEMPLATES\_DIR} en \texttt{settings.py} apunta a \texttt{BASE\_DIR/Templates} para la vista previa de plantillas.
+\end{itemize}
+
+Sin \texttt{OPENAI\_API\_KEY} ni \texttt{OLLAMA\_MODEL} el chat sigue funcionando con lógica básica. Con OAuth configurado, en la interfaz aparece el enlace ``Conectar con Tiendanube'' para autorizar la tienda desde el navegador.
+
+%----------------------------------------------------------
+\section{Resumen}
+%----------------------------------------------------------
+
+La propuesta presenta un \textbf{asistente inteligente para la configuración de tiendas} basado en LLM, que permite al usuario completar secciones de su tienda (chatbots, APIs de validación, reconocimiento facial, etc.) mediante lenguaje natural y con integración automatizada. El proyecto se alinea con los tres objetivos del hackathon (ecosistema Tiendanube, crecimiento de negocios digitales, reducción de barreras al ecommerce) y responde de forma explícita a los cinco criterios de la rúbrica de evaluación, con énfasis en impacto validado, innovación diferenciadora, integración tecnológica operativa, UX y demo claros, y escalabilidad y viabilidad técnica sustentadas.
+
+%----------------------------------------------------------
+
+\printbibliography
+
+%----------------------------------------------------------
+
+\end{document}

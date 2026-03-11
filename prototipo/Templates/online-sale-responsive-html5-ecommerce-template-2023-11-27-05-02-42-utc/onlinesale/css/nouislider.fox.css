@@ -1,0 +1,93 @@
+.range-slider,
+.range-slider * {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	display: block;
+	cursor: default;
+}
+.range-slider {
+	position: relative;
+}
+.range-slider a {
+	position: absolute;
+	z-index: 1;
+}
+.range-slider a:nth-child(2) {
+	background: inherit !important;
+}
+.range-slider.horizontal a {
+	height: 100%;
+	right: 0;
+}
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+	.range-slider:before,
+	body.TOUCH,
+	.range-slider div {
+		-ms-touch-action: none;
+	}
+	.range-slider:before {
+		display: block;
+		position: absolute;
+		width: 150%;
+		left: -25%;
+		height: 400%;
+		top: -150%;
+		content: "";
+		z-index: -1;
+	}
+}
+.range-slider {
+	border-radius: 3px;
+}
+.range-slider.connect a,
+.range-slider.connect.lower {
+	background: #b2a98f;
+}
+.range-slider,
+.range-slider.connect.lower a {
+	border: 1px solid #eaeaea;
+	background: #fdfdfd;
+	background: -moz-linear-gradient(top,  #fdfdfd 0%, #f1f1f1 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#fdfdfd), color-stop(100%,#f1f1f1));
+	background: -webkit-linear-gradient(top,  #fdfdfd 0%,#f1f1f1 100%);
+	background: -o-linear-gradient(top,  #fdfdfd 0%,#f1f1f1 100%);
+	background: -ms-linear-gradient(top,  #fdfdfd 0%,#f1f1f1 100%);
+	background: linear-gradient(to bottom,  #fdfdfd 0%,#f1f1f1 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fdfdfd', endColorstr='#f1f1f1',GradientType=0 );
+}
+.range-slider > a:first-child {
+	background: #434343;
+}
+.range-slider.disabled,
+.range-slider.disabled.connect.lower a {
+	background: #ccc;
+	box-shadow: none;
+}
+.range-slider div {
+	height: 25px;
+	width: 25px;
+	border: 1px solid #d9d9d9;
+
+	border-radius: 100px;
+	background: #fafafa;
+	cursor: pointer;
+}
+.range-slider.disabled div {
+	background: transparent;
+}
+.range-slider.horizontal {
+	width: 100%;
+	height: 6px;
+	margin: 0 auto;
+}
+.range-slider.horizontal div {
+	margin: -12px 0 0 -9px;
+}
+
+.range-slider-value{
+	display:none !important;
+}

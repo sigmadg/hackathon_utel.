@@ -1,0 +1,107 @@
+# =============================
+# Entornos virtuales (Python)
+# =============================
+.venv/
+venv/
+env/
+ENV/
+
+# =============================
+# Python
+# =============================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.manifest
+*.spec
+
+# =============================
+# Django
+# =============================
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+local_settings.py
+*.pot
+
+# =============================
+# Variables de entorno y secretos
+# =============================
+.env
+.env.local
+.env.*.local
+*.pem
+secrets/
+
+# =============================
+# LaTeX (archivos compilados/auxiliares)
+# =============================
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.bcf
+
+# =============================
+# Sistema operativo
+# =============================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =============================
+# IDEs y editores
+# =============================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# =============================
+# Testing y cobertura
+# =============================
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# =============================
+# Jupyter Notebook
+# =============================
+.ipynb_checkpoints/
+
+# =============================
+# Cursor / misc
+# =============================
+.cursor/
