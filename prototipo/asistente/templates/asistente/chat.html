@@ -18,10 +18,15 @@
             --success: #22c55e;
         }
         * { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            margin: 0;
             min-height: 100vh;
+            height: 100vh;
             background: var(--bg);
             color: var(--text);
             display: flex;
@@ -54,19 +59,23 @@
             display: flex;
             flex: 1;
             min-height: 0;
+            overflow: hidden;
         }
 
         /* Columna chat */
         .chat-column {
             flex: 1;
             min-width: 0;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border);
         }
         #chat-container {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 1rem;
             display: flex;
             flex-direction: column;
@@ -100,6 +109,19 @@
             font-size: 0.8rem;
             border-left: 3px solid var(--primary);
         }
+        #chat-loading.chat-loading {
+            opacity: 0.9;
+        }
+        .chat-loading-ellipsis::after {
+            content: '';
+            animation: chat-loading-dots 1.2s steps(4, end) infinite;
+        }
+        @keyframes chat-loading-dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
         #form-container {
             padding: 1rem 1.5rem;
             border-top: 1px solid var(--border);
@@ -107,16 +129,84 @@
         }
         #form-container form {
             display: flex;
+            flex-wrap: wrap;
             gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .chat-form-row {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
         }
         #input-text {
             flex: 1;
+            min-width: 0;
             padding: 0.75rem 1rem;
             border: 1px solid var(--border);
             border-radius: 0.75rem;
             background: var(--bg);
             color: var(--text);
             font-size: 1rem;
+        }
+        #btn-attach {
+            padding: 0.75rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        #btn-attach:hover {
+            background: var(--border);
+        }
+        .image-previews {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .image-previews .img-wrap {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .image-previews .img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-previews .img-wrap .remove-img {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            padding: 0;
+        }
+        .msg .msg-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+        }
+        .msg .msg-images img {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 0.5rem;
+            object-fit: cover;
         }
         #input-text:focus {
             outline: none;
@@ -168,60 +258,6 @@
             font-size: 0.9rem;
             color: var(--primary);
         }
-        #visor-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .visor-empty {
-            padding: 1.5rem 1rem;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-        .visor-card {
-            background: var(--surface2);
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            border-left: 3px solid var(--primary);
-        }
-        .visor-card-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.35rem;
-        }
-        .visor-card-type {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-        }
-        .visor-card-snippet {
-            font-family: 'Fira Mono', 'Consolas', monospace;
-            font-size: 0.7rem;
-            background: var(--bg);
-            padding: 0.5rem;
-            border-radius: 0.35rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            overflow-x: auto;
-            max-height: 140px;
-            overflow-y: auto;
-        }
-        .visor-card-badge {
-            display: inline-block;
-            margin-top: 0.4rem;
-            padding: 0.15rem 0.4rem;
-            border-radius: 0.25rem;
-            font-size: 0.65rem;
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--success);
-        }
-
         .template-cards {
             display: flex;
             flex-wrap: wrap;
@@ -303,13 +339,21 @@
                 <div class="msg assistant">
                     ¿Qué te gustaría vender? Cuéntame el tipo de tienda o productos que tienes en mente (por ejemplo: tienda de zapatos, ropa, electrónica).
                 </div>
+                <div id="chat-loading" class="msg assistant chat-loading" aria-live="polite" style="display: none;">
+                    <span class="chat-loading-dots">El asistente está trabajando</span><span class="chat-loading-ellipsis"></span>
+                </div>
             </div>
 
             <div id="form-container">
                 <form id="chat-form" action="{% url 'asistente:api_chat' %}" method="post">
                     {% csrf_token %}
-                    <input type="text" id="input-text" name="message" placeholder="Escribe tu mensaje..." autocomplete="off" required>
-                    <button type="submit" id="btn-send">Enviar</button>
+                    <input type="file" id="input-images" name="images" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" multiple style="display: none;">
+                    <div class="chat-form-row">
+                        <input type="text" id="input-text" name="message" placeholder="Escribe tu mensaje o agrega una imagen (logo, encabezado, producto)..." autocomplete="off">
+                        <button type="button" id="btn-attach" title="Agregar imagen (logo, encabezado, producto)" aria-label="Agregar imagen">📷</button>
+                        <button type="submit" id="btn-send">Enviar</button>
+                    </div>
+                    <div id="image-previews" class="image-previews" style="display: none;"></div>
                 </form>
             </div>
         </div>
@@ -319,10 +363,6 @@
                 <div class="visor-header">Vista previa de tu tienda</div>
                 <iframe id="preview-iframe" title="Vista previa de la tienda generada" sandbox="allow-same-origin"></iframe>
             </div>
-            <div class="visor-header">Implementación</div>
-            <div id="visor-list">
-                <div class="visor-empty" id="visor-empty">Los cambios que apliques desde el chat aparecerán aquí.</div>
-            </div>
         </div>
     </div>
 
@@ -331,13 +371,12 @@
         const form = document.getElementById('chat-form');
         const inputText = document.getElementById('input-text');
         const btnSend = document.getElementById('btn-send');
-        const visorList = document.getElementById('visor-list');
-        const visorEmpty = document.getElementById('visor-empty');
         const visorPreview = document.getElementById('visor-preview');
         const previewIframe = document.getElementById('preview-iframe');
 
         let messages = [];
-        let implementations = [];
+        let pendingImages = [];
+        let chatId = crypto.randomUUID ? crypto.randomUUID() : 'chat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
 
         (function checkTiendanubeStatus() {
             const el = document.getElementById('tiendanube-status');
@@ -378,6 +417,13 @@
             const div = document.createElement('div');
             div.className = 'msg ' + role;
             let html = content.replace(/\n/g, '<br>');
+            if (options.images && options.images.length > 0) {
+                html += '<div class="msg-images">';
+                options.images.forEach(function(src) {
+                    html += '<img src="' + escapeHtml(src) + '" alt="">';
+                });
+                html += '</div>';
+            }
             if (actionResult && actionResult.message) {
                 html += '<div class="action-result">' + actionResult.message.replace(/\n/g, '<br>') + '</div>';
             }
@@ -436,21 +482,77 @@
             fetchReply();
         }
 
-        async function fetchReply() {
+        function renderImagePreviews() {
+            var wrap = document.getElementById('image-previews');
+            wrap.innerHTML = '';
+            if (pendingImages.length === 0) {
+                wrap.style.display = 'none';
+                return;
+            }
+            wrap.style.display = 'flex';
+            pendingImages.forEach(function(item, i) {
+                var div = document.createElement('div');
+                div.className = 'img-wrap';
+                div.innerHTML = '<img src="' + item.data + '" alt=""><button type="button" class="remove-img" data-i="' + i + '" aria-label="Quitar">×</button>';
+                wrap.appendChild(div);
+            });
+            wrap.querySelectorAll('.remove-img').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var i = parseInt(this.getAttribute('data-i'), 10);
+                    pendingImages.splice(i, 1);
+                    renderImagePreviews();
+                });
+            });
+        }
+
+        document.getElementById('btn-attach').addEventListener('click', function() {
+            document.getElementById('input-images').click();
+        });
+        document.getElementById('input-images').addEventListener('change', function() {
+            var files = this.files || [];
+            for (var f = 0; f < files.length; f++) {
+                (function(file) {
+                    if (!file.type.match(/^image\/(png|jpeg|jpg|gif|webp)$/)) return;
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        pendingImages.push({ data: reader.result, name: file.name });
+                        renderImagePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                })(files[f]);
+            }
+            this.value = '';
+        });
+
+        async function fetchReply(imagesPayload) {
             try {
                 const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                var body = { messages: messages, chat_id: chatId };
+                if (imagesPayload && imagesPayload.length) {
+                    body.images = imagesPayload;
+                }
                 const res = await fetch('{% url "asistente:api_chat" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrf,
                     },
-                    body: JSON.stringify({ messages: messages }),
+                    body: JSON.stringify(body),
                 });
                 const data = await res.json();
                 if (data.error) {
                     addMessage('assistant', 'Error: ' + data.error);
                 } else {
+                    if (data.chat_id) chatId = data.chat_id;
+                    var designApplied = data.template_updated || (data.action_result && data.action_result.detail && data.action_result.detail.design_applied);
+                    if (designApplied !== undefined || data.preview_path) {
+                        console.log('[Vista previa]', {
+                            preview_path: data.preview_path,
+                            template_updated: data.template_updated,
+                            design_applied: data.action_result && data.action_result.detail && data.action_result.detail.design_applied,
+                            recargando_iframe: !!data.preview_path && !!designApplied
+                        });
+                    }
                     messages.push({ role: 'assistant', content: data.reply });
                     addMessage('assistant', data.reply, data.action_result || null, {
                         templates: data.show_templates ? data.templates : [],
@@ -459,18 +561,49 @@
                     if (data.preview_path) {
                         visorPreview.classList.add('visible');
                         previewIframe.removeAttribute('srcdoc');
-                        previewIframe.src = '/templates-preview/' + data.preview_path;
+                        var previewUrl = '/templates-preview/' + data.preview_path;
+                        previewUrl += (data.preview_path.indexOf('?') !== -1 ? '&' : '?') + 't=' + Date.now();
+                        if (designApplied) {
+                            console.log('[Vista previa] Recargando iframe con', previewUrl);
+                            previewIframe.src = 'about:blank';
+                            var appliedUrl = previewUrl;
+                            var done = false;
+                            previewIframe.onload = function() {
+                                if (done) return;
+                                done = true;
+                                previewIframe.onload = null;
+                                previewIframe.src = appliedUrl;
+                                console.log('[Vista previa] Iframe cargado con cambios');
+                            };
+                            setTimeout(function() {
+                                if (!done) {
+                                    done = true;
+                                    previewIframe.onload = null;
+                                    previewIframe.src = appliedUrl;
+                                    console.log('[Vista previa] Iframe cargado (timeout)');
+                                }
+                            }, 150);
+                        } else {
+                            previewIframe.src = previewUrl;
+                        }
                     } else if (data.preview_url) {
                         visorPreview.classList.add('visible');
                         previewIframe.removeAttribute('srcdoc');
-                        previewIframe.src = data.preview_url;
+                        var url = data.preview_url;
+                        if (data.template_updated) {
+                            url += (data.preview_url.indexOf('?') !== -1 ? '&' : '?') + 't=' + Date.now();
+                            previewIframe.onload = function() {
+                                previewIframe.onload = null;
+                                previewIframe.src = url;
+                            };
+                            previewIframe.src = 'about:blank';
+                        } else {
+                            previewIframe.src = url;
+                        }
                     } else if (data.generated_page_html) {
                         visorPreview.classList.add('visible');
                         previewIframe.removeAttribute('src');
                         previewIframe.srcdoc = data.generated_page_html;
-                    }
-                    if (data.action && data.action !== 'otro' && data.action_result) {
-                        addToVisor(data.action, data.action_result);
                     }
                 }
             } catch (err) {
@@ -478,25 +611,6 @@
                 console.error(err);
             }
             setLoading(false);
-        }
-
-        function addToVisor(action, actionResult) {
-            const impl = actionResult && actionResult.detail && actionResult.detail.implementation;
-            if (!impl) return;
-
-            implementations.push({ action, ...impl, simulated: actionResult.detail.simulated });
-            visorEmpty.style.display = 'none';
-
-            const card = document.createElement('div');
-            card.className = 'visor-card';
-            const typeLabel = impl.type || 'config';
-            card.innerHTML =
-                '<div class="visor-card-type">' + escapeHtml(typeLabel) + '</div>' +
-                '<div class="visor-card-title">' + escapeHtml(impl.title) + '</div>' +
-                '<pre class="visor-card-snippet">' + escapeHtml(impl.snippet || '') + '</pre>' +
-                '<span class="visor-card-badge">' + (actionResult.detail.simulated ? 'Simulado' : 'Aplicado') + '</span>';
-            visorList.appendChild(card);
-            visorList.scrollTop = visorList.scrollHeight;
         }
 
         function escapeHtml(s) {
@@ -508,19 +622,27 @@
         function setLoading(on) {
             btnSend.disabled = on;
             inputText.disabled = on;
+            const loadingEl = document.getElementById('chat-loading');
+            if (loadingEl) loadingEl.style.display = on ? 'block' : 'none';
+            if (on) chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             const text = inputText.value.trim();
-            if (!text) return;
-
+            if (!text && pendingImages.length === 0) return;
+            var content = text || '(Imagen adjunta)';
             inputText.value = '';
-            messages.push({ role: 'user', content: text });
-            addMessage('user', text);
+            var imagesPayload = pendingImages.map(function(p) { return { data: p.data, name: p.name }; });
+            if (pendingImages.length) {
+                pendingImages = [];
+                renderImagePreviews();
+            }
+            messages.push({ role: 'user', content: content });
+            addMessage('user', content, null, { images: imagesPayload.length ? imagesPayload.map(function(p) { return p.data; }) : [] });
 
             setLoading(true);
-            await fetchReply();
+            await fetchReply(imagesPayload);
         });
     </script>
 </body>

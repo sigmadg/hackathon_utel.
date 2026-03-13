@@ -2,9 +2,13 @@
 Vistas del asistente: página de chat y API para enviar mensajes.
 """
 import json
+import logging
 import secrets
 import os
+import uuid
 import requests
+
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, Http404, HttpResponse
 from django.conf import settings
@@ -14,10 +18,20 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_exempt  # solo para API JSON en prototipo
 
-from .services.llm_service import chat, extract_action
+from .services.llm_service import chat, extract_action, extract_design_spec, extract_design_spec_fallback
 from .services.intent_handler import execute_action
-from .services.flow_service import run_flow, flow_handles
+from .services.flow_service import run_flow, flow_handles, has_chat_copy, get_chat_copy_preview_path
+from .services.design_applier import apply_design_to_copy, parse_user_design_intent
+from .services.image_handler import save_chat_images, apply_image_to_template
 from .services import tiendanube_api
+
+
+def _looks_like_design_spec(spec):
+    """True si el dict parece un design_spec (título, colores, idioma) para aplicar al template."""
+    if not spec or not isinstance(spec, dict):
+        return False
+    design_keys = {"store_name", "title", "nombre_tienda", "primary_color", "secondary_color", "background_color", "heading_color", "text_color", "font_family", "primary", "secondary", "background", "language", "idioma", "lang"}
+    return bool(design_keys & set(spec.keys()))
 
 
 @ensure_csrf_cookie
@@ -95,9 +109,11 @@ def api_chat(request):
     if not isinstance(messages, list):
         return JsonResponse({"error": "messages debe ser una lista"}, status=400)
 
+    chat_id = body.get("chat_id") or str(uuid.uuid4())
+
     # Flujo guiado: qué vender → diseño → qué agregar
     if flow_handles(messages):
-        reply, show_templates, templates, show_addons, addons, generated_page_html, preview_path = run_flow(messages)
+        reply, show_templates, templates, show_addons, addons, generated_page_html, preview_path = run_flow(messages, chat_id=chat_id)
         preview_url = None
         if preview_path:
             try:
@@ -115,21 +131,87 @@ def api_chat(request):
             "generated_page_html": generated_page_html,
             "preview_url": preview_url,
             "preview_path": preview_path or "",
+            "chat_id": chat_id,
         })
 
-    # Respuesta normal por LLM
-    reply_text = chat(messages)
+    # Imágenes adjuntas: guardar en la copia del chat y opcionalmente aplicar como logo/encabezado
+    has_copy = has_chat_copy(chat_id)
+    images_data = body.get("images") or []
+    saved_image_paths = []
+    save_err = None
+    image_apply_msg = None
+    preview_path = ""
+    preview_url = None
+
+    if has_copy and images_data:
+        saved_image_paths, save_err = save_chat_images(chat_id, images_data)
+        if save_err and not saved_image_paths:
+            pass  # opcional: devolver save_err en la respuesta
+        elif saved_image_paths:
+            last_user = next((m.get("content") or "" for m in reversed(messages) if m.get("role") == "user"), "")
+            last_lower = last_user.lower()
+            role = "logo" if any(k in last_lower for k in ("logo", "como logo", "esta imagen es el logo", "usa esta como logo")) else None
+            if not role and any(k in last_lower for k in ("encabezado", "banner", "cabecera", "header", "imagen del encabezado", "fondo del encabezado")):
+                role = "banner"
+            if role:
+                ok, image_apply_msg = apply_image_to_template(chat_id, saved_image_paths[0], role=role)
+                if ok:
+                    preview_path = get_chat_copy_preview_path(chat_id) or ""
+                    if preview_path:
+                        try:
+                            preview_url = request.build_absolute_uri(reverse("asistente:template_preview", args=[preview_path]))
+                        except Exception:
+                            pass
+
+    # Respuesta normal por LLM (con contexto de diseño si tiene copia del template)
+    reply_text = chat(messages, has_template_copy=has_copy)
     action = extract_action(reply_text)
+    action_normalized = (action or "").replace("ñ", "n").replace("ó", "o").strip()
 
     reply_clean = "\n".join(
         line for line in reply_text.splitlines()
         if not line.strip().upper().startswith("ACCION:")
+        and not (line.strip().startswith("{") and line.strip().endswith("}"))
     ).strip()
 
     action_result = None
-    if action and action != "otro":
+    template_updated = False
+    if image_apply_msg:
+        action_result = {"success": True, "message": image_apply_msg, "detail": {"images_applied": True}}
+        template_updated = True
+
+    last_user_message = next((m.get("content") or "" for m in reversed(messages) if m.get("role") == "user"), "")
+    design_spec = (
+        extract_design_spec(reply_text)
+        or (extract_design_spec_fallback(reply_text) if has_copy else None)
+        or (parse_user_design_intent(last_user_message) if has_copy else None)
+    )
+    if has_copy and design_spec:
+        logger.info("Aplicando diseño al template: chat_id=%s spec=%s", chat_id, design_spec)
+        ok, msg = apply_design_to_copy(chat_id, design_spec)
+        logger.info("Diseño aplicado: ok=%s msg=%s", ok, msg)
+        action_result = {"success": ok, "message": msg, "detail": {"design_applied": ok}}
+        if ok:
+            template_updated = True
+            preview_path = get_chat_copy_preview_path(chat_id) or ""
+            if preview_path:
+                try:
+                    preview_url = request.build_absolute_uri(reverse("asistente:template_preview", args=[preview_path]))
+                except Exception:
+                    pass
+    elif action_normalized == "diseno" and has_copy and not design_spec:
+        logger.warning("Usuario pidió diseño pero no se extrajo spec: has_copy=%s", has_copy)
+        action_result = {"success": False, "message": "No se pudo interpretar el diseño.", "detail": {}}
+    elif action_normalized and action_normalized != "otro":
         ok, msg, detail = execute_action(action, context={"request": request})
         action_result = {"success": ok, "message": msg, "detail": detail}
+
+    if save_err and images_data and not saved_image_paths:
+        reply_clean = (save_err + "\n\n" + reply_clean) if reply_clean else save_err
+    elif saved_image_paths and not image_apply_msg and reply_clean:
+        reply_clean = "He guardado tu(s) imagen(es). Puedes decirme «úsala como logo» o «como imagen del encabezado» para aplicarla.\n\n" + reply_clean
+    elif saved_image_paths and not image_apply_msg:
+        reply_clean = "He guardado tu(s) imagen(es). Dime «úsala como logo» o «como encabezado» para aplicarla a tu tienda."
 
     return JsonResponse({
         "reply": reply_clean,
@@ -140,8 +222,11 @@ def api_chat(request):
         "show_addons": False,
         "addons": [],
         "generated_page_html": None,
-        "preview_url": None,
-        "preview_path": "",
+        "preview_url": preview_url or "",
+        "preview_path": preview_path,
+        "chat_id": chat_id,
+        "images_saved": saved_image_paths,
+        "template_updated": template_updated,
     })
 
 
@@ -233,4 +318,8 @@ def serve_template_preview(request, path):
         raise Http404("Cannot read file")
     response = HttpResponse(content, content_type=content_type)
     response["X-Frame-Options"] = "SAMEORIGIN"
+    if safe_path.startswith("copies/"):
+        response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
     return response
