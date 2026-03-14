@@ -1,6 +1,7 @@
 """
 Flujo conversacional: qué vender → elegir diseño (3 templates) → qué agregar (pagos, dropshipping, etc.).
-Al elegir un template se hace una copia por chat_id y se sirve esa copia en el visor.
+Al elegir un template se hace una copia en copies/current/; los cambios se aplican solo en ese template,
+sin asociarlos a la conversación (chat_id).
 """
 import json
 import os
@@ -27,6 +28,8 @@ DESIGN_SOURCE_DIRS = {
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "Templates"
 DISENOS_JSON = TEMPLATES_DIR / "disenos.json"
 COPIES_SUBDIR = "copies"
+# Una sola copia de trabajo del template seleccionado; los cambios se aplican aquí, no por conversación
+CURRENT_COPY_DIR = "current"
 
 ADDONS = [
     {"id": "pagos", "name": "Métodos de pago", "description": "Pago Nube, Mercado Pago, PayPal"},
@@ -101,42 +104,44 @@ def _design_id_from_last_message(text):
     return "minimal"
 
 
-def has_chat_copy(chat_id):
-    """True si existe una copia del template para este chat_id."""
-    if not chat_id:
-        return False
-    copy_dir = TEMPLATES_DIR / COPIES_SUBDIR / str(chat_id)
-    return copy_dir.is_dir()
+def get_current_copy_dir():
+    """Ruta absoluta de la copia de trabajo del template (copies/current/). Los cambios se aplican aquí."""
+    return TEMPLATES_DIR / COPIES_SUBDIR / CURRENT_COPY_DIR
 
 
-def get_chat_copy_preview_path(chat_id):
+def has_chat_copy(chat_id=None):
+    """True si existe la copia de trabajo del template (no depende del chat_id)."""
+    return get_current_copy_dir().is_dir()
+
+
+def get_chat_copy_preview_path(chat_id=None):
     """
-    Devuelve la ruta de preview de la copia del chat (ej. copies/xxx/index.html)
-    o None si no hay copia.
+    Devuelve la ruta de preview del template en edición (copies/current/index.html o home.html).
+    No depende del chat_id; es siempre la copia actual.
     """
     if not has_chat_copy(chat_id):
         return None
-    copy_dir = TEMPLATES_DIR / COPIES_SUBDIR / str(chat_id)
+    copy_dir = get_current_copy_dir()
     if (copy_dir / "index.html").exists():
-        return f"{COPIES_SUBDIR}/{chat_id}/index.html"
+        return f"{COPIES_SUBDIR}/{CURRENT_COPY_DIR}/index.html"
     if (copy_dir / "home.html").exists():
-        return f"{COPIES_SUBDIR}/{chat_id}/home.html"
-    return f"{COPIES_SUBDIR}/{chat_id}/index.html"  # fallback
+        return f"{COPIES_SUBDIR}/{CURRENT_COPY_DIR}/home.html"
+    return f"{COPIES_SUBDIR}/{CURRENT_COPY_DIR}/index.html"
 
 
 def copy_template_for_chat(chat_id, design_id):
     """
-    Copia la plantilla del diseño elegido a Templates/copies/<chat_id>/.
-    Esa copia es la que se muestra en el visor y queda guardada por chat_id.
-    Devuelve (preview_path, error). preview_path es relativo a TEMPLATES_DIR (ej. copies/abc123/index.html).
+    Copia la plantilla del diseño elegido a Templates/copies/current/.
+    Los cambios (diseño, pagos, etc.) se aplican en esa copia, no por conversación.
+    Devuelve (preview_path, error).
     """
-    if not chat_id or not design_id:
-        return None, "Falta chat_id o design_id"
+    if not design_id:
+        return None, "Falta design_id"
     if design_id not in DESIGN_SOURCE_DIRS:
         return None, f"Diseño desconocido: {design_id}"
     src_rel, entry_file = DESIGN_SOURCE_DIRS[design_id]
     src_dir = TEMPLATES_DIR / src_rel
-    dest_dir = TEMPLATES_DIR / COPIES_SUBDIR / str(chat_id)
+    dest_dir = get_current_copy_dir()
     if not src_dir.is_dir():
         return None, f"No existe la plantilla: {src_dir}"
     try:
@@ -153,7 +158,7 @@ def copy_template_for_chat(chat_id, design_id):
             for f in uploads_backup.iterdir():
                 shutil.copy2(f, dest_dir / "uploads" / f.name)
             shutil.rmtree(uploads_backup.parent, ignore_errors=True)
-        preview_path = f"{COPIES_SUBDIR}/{chat_id}/{entry_file}"
+        preview_path = f"{COPIES_SUBDIR}/{CURRENT_COPY_DIR}/{entry_file}"
         return preview_path, None
     except Exception as e:
         return None, str(e)
@@ -175,22 +180,17 @@ def run_flow(messages, chat_id=None):
         )
         return reply, True, templates, False, [], None, None
 
-    # Paso 2: segundo mensaje = elección de diseño → copia del template por chat_id, luego preguntas de personalización
+    # Paso 2: segundo mensaje = elección de diseño → copia del template a copies/current/, luego preguntas de personalización
     if user_count == 2 and _is_template_choice(last):
         addons = ADDONS
         reply = (
-            "Genial, ya tenemos tu diseño asociado a esta conversación. ¿Cómo te gustaría personalizarlo? "
-            "Cuéntame por ejemplo: ¿qué colores prefieres para la tienda?, ¿algún estilo en particular (más minimalista, más llamativo)?, "
-            "¿cómo quieres que se vea el encabezado y el pie de página? "
-            "Si prefieres otro diseño de tienda, también puedo mostrarte las opciones de nuevo. Después podemos agregar métodos de pago, envíos, chatbot y más."
+            "Genial, ya tenemos tu diseño. ¿Cómo te gustaría personalizarlo? "
+            "Cuéntame por ejemplo: ¿qué colores prefieres?, ¿algún estilo en particular?, "
+            "¿cómo quieres el encabezado y el pie? Después podemos agregar métodos de pago, envíos, chatbot y más."
         )
         design_id = _design_id_from_last_message(last)
-        # Copia el template a copies/<chat_id>/ y usa esa ruta para el visor
-        if chat_id:
-            preview_path, copy_err = copy_template_for_chat(chat_id, design_id)
-            if copy_err:
-                preview_path = DESIGN_TEMPLATE_PATHS.get(design_id)  # fallback al original
-        else:
+        preview_path, copy_err = copy_template_for_chat(chat_id, design_id)
+        if copy_err:
             preview_path = DESIGN_TEMPLATE_PATHS.get(design_id)
         generated_page_html, _ = page_generator.generate_page_html(messages)
         return reply, False, [], True, addons, generated_page_html or None, preview_path or None

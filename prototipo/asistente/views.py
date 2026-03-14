@@ -18,20 +18,16 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_exempt  # solo para API JSON en prototipo
 
-from .services.llm_service import chat, extract_action, extract_design_spec, extract_design_spec_fallback
-from .services.intent_handler import execute_action
+from .services.llm_service import chat
 from .services.flow_service import run_flow, flow_handles, has_chat_copy, get_chat_copy_preview_path
-from .services.design_applier import apply_design_to_copy, parse_user_design_intent
 from .services.image_handler import save_chat_images, apply_image_to_template
+from .services.template_agent import run_agent
+from .services.rag_service import get_context_for_query
 from .services import tiendanube_api
 
-
-def _looks_like_design_spec(spec):
-    """True si el dict parece un design_spec (título, colores, idioma) para aplicar al template."""
-    if not spec or not isinstance(spec, dict):
-        return False
-    design_keys = {"store_name", "title", "nombre_tienda", "primary_color", "secondary_color", "background_color", "heading_color", "text_color", "font_family", "primary", "secondary", "background", "language", "idioma", "lang"}
-    return bool(design_keys & set(spec.keys()))
+# Agente LangChain (herramientas + LLM): activar con USE_LANGCHAIN_AGENT=true
+def _use_langchain_agent():
+    return os.environ.get("USE_LANGCHAIN_AGENT", "").lower() in ("1", "true", "yes")
 
 
 @ensure_csrf_cookie
@@ -163,16 +159,7 @@ def api_chat(request):
                         except Exception:
                             pass
 
-    # Respuesta normal por LLM (con contexto de diseño si tiene copia del template)
-    reply_text = chat(messages, has_template_copy=has_copy)
-    action = extract_action(reply_text)
-    action_normalized = (action or "").replace("ñ", "n").replace("ó", "o").strip()
-
-    reply_clean = "\n".join(
-        line for line in reply_text.splitlines()
-        if not line.strip().upper().startswith("ACCION:")
-        and not (line.strip().startswith("{") and line.strip().endswith("}"))
-    ).strip()
+    last_user_message = next((m.get("content") or "" for m in reversed(messages) if m.get("role") == "user"), "")
 
     action_result = None
     template_updated = False
@@ -180,31 +167,35 @@ def api_chat(request):
         action_result = {"success": True, "message": image_apply_msg, "detail": {"images_applied": True}}
         template_updated = True
 
-    last_user_message = next((m.get("content") or "" for m in reversed(messages) if m.get("role") == "user"), "")
-    design_spec = (
-        extract_design_spec(reply_text)
-        or (extract_design_spec_fallback(reply_text) if has_copy else None)
-        or (parse_user_design_intent(last_user_message) if has_copy else None)
-    )
-    if has_copy and design_spec:
-        logger.info("Aplicando diseño al template: chat_id=%s spec=%s", chat_id, design_spec)
-        ok, msg = apply_design_to_copy(chat_id, design_spec)
-        logger.info("Diseño aplicado: ok=%s msg=%s", ok, msg)
-        action_result = {"success": ok, "message": msg, "detail": {"design_applied": ok}}
-        if ok:
-            template_updated = True
-            preview_path = get_chat_copy_preview_path(chat_id) or ""
-            if preview_path:
-                try:
-                    preview_url = request.build_absolute_uri(reverse("asistente:template_preview", args=[preview_path]))
-                except Exception:
-                    pass
-    elif action_normalized == "diseno" and has_copy and not design_spec:
-        logger.warning("Usuario pidió diseño pero no se extrajo spec: has_copy=%s", has_copy)
-        action_result = {"success": False, "message": "No se pudo interpretar el diseño.", "detail": {}}
-    elif action_normalized and action_normalized != "otro":
-        ok, msg, detail = execute_action(action, context={"request": request})
-        action_result = {"success": ok, "message": msg, "detail": detail}
+    # Opción 1: Agente LangChain (herramientas + decisión del LLM) si está activado y hay copia del template
+    agent_result = None
+    if has_copy and _use_langchain_agent():
+        try:
+            from .services.langchain_agent import run_langchain_agent
+            agent_result = run_langchain_agent(chat_id, last_user_message, history_messages=messages, has_copy=has_copy)
+        except Exception as e:
+            logger.warning("LangChain agent failed, using default flow: %s", e)
+            agent_result = None
+
+    # Opción 2: Flujo por defecto (LLM + agente que parsea ACCION)
+    if agent_result is None:
+        rag_context = get_context_for_query(last_user_message)
+        reply_text = chat(messages, has_template_copy=has_copy, rag_context=rag_context)
+        agent_result = run_agent(chat_id, reply_text, last_user_message, has_copy, request=request)
+
+    # Mostrar siempre el mensaje del agente cuando ejecutó una orden (nunca instrucciones del LLM)
+    reply_clean = agent_result.get("reply_override") or agent_result["reply_clean"]
+    if agent_result.get("action_result") is not None:
+        action_result = agent_result["action_result"]
+        if action_result.get("success") and action_result.get("message"):
+            reply_clean = (action_result["message"].rstrip(".") + ". ¿Algo más?")
+    template_updated = template_updated or agent_result["template_updated"]
+    if agent_result.get("preview_path"):
+        preview_path = agent_result["preview_path"]
+        try:
+            preview_url = request.build_absolute_uri(reverse("asistente:template_preview", args=[preview_path]))
+        except Exception:
+            pass
 
     if save_err and images_data and not saved_image_paths:
         reply_clean = (save_err + "\n\n" + reply_clean) if reply_clean else save_err
@@ -215,7 +206,7 @@ def api_chat(request):
 
     return JsonResponse({
         "reply": reply_clean,
-        "action": action,
+        "action": agent_result.get("action_normalized") or "",
         "action_result": action_result,
         "show_templates": False,
         "templates": [],

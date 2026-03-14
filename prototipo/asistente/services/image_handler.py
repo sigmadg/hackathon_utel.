@@ -1,13 +1,13 @@
 """
-Guarda imágenes subidas en el chat y las aplica al template (logo, encabezado, productos).
-Las imágenes se guardan en copies/<chat_id>/uploads/ para servirse con la vista previa.
+Guarda imágenes subidas y las aplica al template en edición (logo, encabezado, productos).
+Las imágenes se guardan en copies/current/uploads/; los cambios no se asocian a la conversación.
 """
 import base64
 import re
 import uuid
 from pathlib import Path
 
-from .flow_service import TEMPLATES_DIR, COPIES_SUBDIR, has_chat_copy
+from .flow_service import has_chat_copy, get_current_copy_dir
 
 UPLOADS_DIR = "uploads"
 ALLOWED_CONTENT_TYPES = ("image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp")
@@ -17,17 +17,16 @@ EXT_BY_TYPE = {"image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg", "
 def save_chat_images(chat_id, images_data):
     """
     images_data: lista de dicts con "data" (data URL base64) y opcional "name".
-    Guarda en copies/<chat_id>/uploads/ y devuelve (list of relative paths, error_msg).
-    Rutas relativas tipo "uploads/xxx.png" para usar en el HTML del template.
+    Guarda en copies/current/uploads/ y devuelve (list of relative paths, error_msg).
     """
-    if not chat_id or not images_data:
+    if not images_data:
         return [], None
-    if not has_chat_copy(chat_id):
+    if not has_chat_copy():
         return [], "Primero elige un diseño de tienda para poder agregar imágenes."
     if not isinstance(images_data, list):
         return [], "Formato de imágenes inválido."
 
-    copy_dir = TEMPLATES_DIR / COPIES_SUBDIR / str(chat_id)
+    copy_dir = get_current_copy_dir()
     uploads_dir = copy_dir / UPLOADS_DIR
     uploads_dir.mkdir(parents=True, exist_ok=True)
     paths = []
@@ -67,13 +66,12 @@ def save_chat_images(chat_id, images_data):
 
 def apply_image_to_template(chat_id, image_relative_path, role="logo"):
     """
-    Actualiza el HTML de la copia del template para usar la imagen en el rol indicado.
+    Actualiza el HTML del template en edición para usar la imagen en el rol indicado.
     role: "logo" | "banner" | "header" (encabezado) | "product"
-    Devuelve (éxito, mensaje).
     """
-    if not chat_id or not image_relative_path or not has_chat_copy(chat_id):
-        return False, "Faltan datos o no hay copia del template."
-    copy_dir = TEMPLATES_DIR / COPIES_SUBDIR / str(chat_id)
+    if not image_relative_path or not has_chat_copy():
+        return False, "Faltan datos o no hay template seleccionado."
+    copy_dir = get_current_copy_dir()
     if not (copy_dir / image_relative_path.lstrip("/")).exists():
         return False, "Imagen no encontrada en la copia."
 

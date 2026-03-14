@@ -5,3 +5,8 @@ python-dotenv>=1.0
 requests>=2.31
 openai>=1.12
 httpx>=0.26
+# LangChain: agente con herramientas para configurar la copia del template
+langchain>=0.3
+langchain-core>=0.3
+langchain-openai>=0.2
+langchain-community>=0.3

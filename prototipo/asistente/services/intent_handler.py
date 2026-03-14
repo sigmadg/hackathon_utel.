@@ -29,8 +29,10 @@ def execute_action(action, context=None):
     return False, "Acción no implementada en este prototipo.", {"action": action}
 
 
+CHATBOT_SCRIPT_NAME = "Asistente Chat (prototipo)"
+
 def _do_chatbot(context):
-    """Intenta registrar un script de ejemplo para chatbot (o simula)."""
+    """Registra un script de chatbot en Tiendanube. Si ya existe (p. ej. tras recargar), no duplica."""
     request = context.get("request")
     implementation = {
         "title": "Chatbot de atención",
@@ -43,13 +45,24 @@ def _do_chatbot(context):
     store, err = tiendanube_api.get_store(request=request)
     if err and not store:
         return True, (
-            "Chatbot preparado para tu tienda. En un entorno con credenciales de Tiendanube "
-            "se registraría un script de atención automática. Por ahora queda configurado en modo demo."
+            "Chatbot preparado para tu tienda. Conecta Tiendanube para que se registre el script. "
+            "Si recargas y vuelves a pedir «activar chatbot», se intentará de nuevo."
         ), {"simulated": True, "error_api": err, "implementation": implementation}
+
+    # Evitar duplicar: si ya existe un script con nuestro nombre, no crear otro (útil al recargar)
+    scripts, list_err = tiendanube_api.list_scripts(request=request)
+    if not list_err and scripts is not None:
+        if not isinstance(scripts, list):
+            scripts = (scripts.get("scripts", []) if isinstance(scripts, dict) else [])
+        for s in (scripts or []):
+            if (s.get("name") or "").strip() == CHATBOT_SCRIPT_NAME:
+                return True, (
+                    "El chatbot ya está configurado en tu tienda. Si recargaste la página, la integración sigue activa."
+                ), {"already_exists": True, "implementation": implementation}
 
     script_src = "https://ejemplo.com/chatbot.js"  # placeholder
     created, err = tiendanube_api.create_script(
-        name="Asistente Chat (prototipo)",
+        name=CHATBOT_SCRIPT_NAME,
         src=script_src,
         description="Chatbot de preguntas frecuentes",
         request=request,
@@ -59,7 +72,7 @@ def _do_chatbot(context):
             "La intención de activar el chatbot fue registrada. "
             f"Para activarlo en tu tienda real necesitas configurar la API: {err}"
         ), {"simulated": True, "error": err, "implementation": implementation}
-    return True, "Chatbot configurado correctamente en tu tienda.", {"script": created, "implementation": implementation}
+    return True, "Chatbot configurado correctamente en tu tienda. Si recargas y pides de nuevo «chatbot», no se duplicará.", {"script": created, "implementation": implementation}
 
 
 def _do_api_validacion(context):
@@ -129,6 +142,7 @@ def _do_envios(context):
 
 
 def _do_pagos(context):
+    """Consulta los métodos de pago actuales en Tiendanube. Cada vez que lo pidas (incluso tras recargar) se vuelve a consultar el estado."""
     request = context.get("request")
     implementation = {
         "title": "Métodos de pago",
@@ -151,22 +165,27 @@ def _do_pagos(context):
         if names:
             implementation["snippet"] = "# Pasarelas en tu tienda:\n" + "\n".join(f"- {n}" for n in names)
         return True, (
-            "Métodos de pago consultados desde tu tienda. Puedes activar más en Tiendanube → Pagos."
+            "Métodos de pago consultados desde tu tienda (estado actual). Puedes activar más en Tiendanube → Pagos. "
+            "Si recargas la página y vuelves a pedir «métodos de pago», se volverá a consultar el estado."
         ), {"simulated": False, "implementation": implementation}
     return True, (
-        "Métodos de pago: puedes activar Pago Nube, Mercado Pago u otros desde el panel de tu tienda."
+        "Métodos de pago: puedes activar Pago Nube, Mercado Pago u otros desde el panel de tu tienda. "
+        "Conecta Tiendanube para que aquí se listen las pasarelas ya configuradas."
     ), {"simulated": True, "implementation": implementation}
 
 
 def _do_dropshipping(context):
+    """Guía de integración con dropshipping. Es informativa; la conexión real se hace en Tiendanube o con la app del proveedor."""
     implementation = {
         "title": "APIs de dropshipping",
         "type": "integration",
         "snippet": """# Conexión con proveedor dropshipping
 POST /api/orders → notificar al proveedor
 GET /api/inventory → sincronizar stock
-# Webhooks: order/paid, product/updated""",
+# Webhooks: order/paid, product/updated
+# Apps: Oberlo, Spocket, Printful en el directorio de Tiendanube""",
     }
     return True, (
-        "APIs de dropshipping configuradas. Conecta tu tienda con proveedores para sincronizar inventario y enviar pedidos automáticamente."
+        "Integración de dropshipping registrada. Conecta tu tienda con proveedores (Oberlo, Spocket, etc.) desde el panel o con la app. "
+        "Si recargas y vuelves a pedir «dropshipping», te daremos de nuevo la guía y el snippet."
     ), {"simulated": True, "implementation": implementation}

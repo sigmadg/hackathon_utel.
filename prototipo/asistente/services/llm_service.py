@@ -7,47 +7,49 @@ import os
 import re
 from django.conf import settings
 
-SYSTEM_PROMPT = """Eres un asistente que ayuda a configurar una tienda en línea en Tiendanube.
-El usuario puede pedirte en lenguaje natural cosas como:
-- Activar o configurar un chatbot para preguntas frecuentes
-- Integrar validación de identidad o APIs de validación
-- Añadir reconocimiento facial para verificación
-- Configurar envíos, pagos u otras secciones de la tienda
+SYSTEM_PROMPT = """Eres un asistente que interpreta lo que el usuario pide y emite la orden para el agente.
+1. LEE e INTERPRETA el mensaje del usuario (qué quiere: pagos, colores, chatbot, idioma, etc.).
+2. Responde en español con una frase breve y al final incluye la orden: ACCION: <nombre_accion>
+Acciones: chatbot, api_validacion, reconocimiento_facial, envios, pagos, dropshipping, diseno, otro.
+Si no entiendes o no hay intención clara, usa ACCION: otro y pregunta qué necesita.
+"""
 
-Responde en español, de forma clara y breve. NUNCA des por terminada la conversación: no digas "Hasta luego", "adiós" ni cierres; invita siempre a seguir (ej: "¿Necesitas algo más?").
-Cuando detectes una intención concreta incluye al final: ACCION: <nombre_accion>
-(nombre_accion: chatbot, api_validacion, reconocimiento_facial, envios, pagos, dropshipping, diseno, otro).
-Si no hay una intención clara, usa ACCION: otro.
+# Con template en edición: interpreta lo que pide el usuario y emite la orden correspondiente.
+AGENT_CONTEXT_PROMPT = """
 
-Ejemplo: "Puedo ayudarte a activar un chatbot para tu tienda. ¿Quieres que lo active ahora? ¿Algo más?
-ACCION: chatbot"
+IMPORTANTE: Interpreta siempre lo que el usuario escribe. Si pide métodos de pago, integrar pagos, activar chatbot, dropshipping, colores, título o idioma, emite la orden correcta.
+
+Si pide algo relacionado con:
+- pagos, métodos de pago, mercadopago, paypal → ACCION: pagos
+- chatbot, chat automático, atención automática → ACCION: chatbot
+- dropshipping, proveedores → ACCION: dropshipping
+- colores, título, nombre de tienda, idioma español → ACCION: diseno (y si es diseño, añade el JSON en la línea siguiente)
+
+Responde en una frase y termina con la orden. Ejemplo:
+Usuario: "quiero agregar métodos de pago"
+Listo. Revisa la vista previa.
+ACCION: pagos
 """
 
 DESIGN_CONTEXT_PROMPT = """
 
-IMPORTANTE: El usuario tiene una copia del template de su tienda en el visor. Los cambios solo se ven si en TU respuesta incluyes ACCION: diseno y el JSON.
+Cuando el usuario pida título, colores o idioma: INTERPRETA qué pide y emite ACCION: diseno más el JSON en la línea siguiente.
+- Si dice un nombre o título → incluye "store_name" en el JSON.
+- Si dice colores (ej. azul, rojo y blanco) → primary_color, secondary_color en hex (#2563eb, #dc2626, #ffffff).
+- Si dice idioma español o en español → "language": "es".
 
-REGLAS OBLIGATORIAS (aplican en CADA mensaje, no solo en el primero):
-1. NUNCA cierres la conversación. Siempre termina invitando: "¿Quieres cambiar algo más?", "¿Algún otro ajuste?"
-2. CADA VEZ que el usuario pida algo de diseño (título, colores, estilo, fondo, idioma, etc.) — sea el primer mensaje, el segundo o el décimo — DEBES incluir al final de tu respuesta exactamente:
-   - Una línea: ACCION: diseno
-   - La línea siguiente: un solo objeto JSON con store_name, primary_color, secondary_color, background_color, language (según lo que pida). Para idioma español usa "language": "es". Colores en hex con #. Sin ``` ni markdown.
-   Si en algún mensaje de diseño no incluyes esas dos líneas, ese cambio NO se aplicará.
-3. El usuario puede ir pidiendo varios cambios seguidos (ej: primero "colores azul y blanco", luego "cambia el azul por verde", luego "pon el título MiTienda"). En CADA respuesta a esas peticiones debes poner ACCION: diseno y el JSON con los valores que correspondan a ESE mensaje.
-4. En tu texto solo confirma en una frase y no muestres el JSON al usuario.
-
-Ejemplo respuesta 1 (usuario: "quiero título CloudIA y colores rojo y rosa"):
-Listo, título CloudIA y colores rojo y rosa aplicados. ¿Quieres cambiar algo más?
+Formato al final:
 ACCION: diseno
-{"store_name": "CloudIA", "primary_color": "#FF007D", "secondary_color": "#FFB6C1", "background_color": "#f8fafc"}
+{"store_name": "...", "primary_color": "#hex", "secondary_color": "#hex", "background_color": "#hex", "language": "es"}
 
-Ejemplo respuesta 2 (usuario: "cambia el rojo por azul"):
-Hecho, azul aplicado. ¿Algún otro cambio?
+Ejemplos:
+Usuario: "quiero título Mi Tienda y colores azul y blanco"
+Listo. Revisa la vista previa.
 ACCION: diseno
-{"primary_color": "#2563eb", "secondary_color": "#FFB6C1", "background_color": "#f8fafc"}
+{"store_name": "Mi Tienda", "primary_color": "#2563eb", "secondary_color": "#ffffff", "background_color": "#f8fafc"}
 
-Ejemplo respuesta 3 (usuario: "pon el idioma en español" o "ajusta el idioma"):
-Listo, idioma en español aplicado. ¿Quieres cambiar algo más?
+Usuario: "pon el idioma en español"
+Listo. Revisa la vista previa.
 ACCION: diseno
 {"language": "es"}
 """
@@ -79,12 +81,16 @@ def _get_model():
     return os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 
 
-def chat(messages, has_template_copy=False):
+def chat(messages, has_template_copy=False, rag_context=None):
     client = get_llm_client()
     if not client:
         return _fallback_response(messages, has_template_copy)
 
-    system = SYSTEM_PROMPT + (DESIGN_CONTEXT_PROMPT if has_template_copy else "")
+    system = SYSTEM_PROMPT + (AGENT_CONTEXT_PROMPT + DESIGN_CONTEXT_PROMPT if has_template_copy else "")
+    if rag_context and isinstance(rag_context, str) and rag_context.strip():
+        system += "\n\n--- Contexto de la documentación (usa esta información para responder sobre métodos de pago, chats automatizados o dropshipping si es relevante para la pregunta del usuario):\n\n"
+        system += rag_context.strip()
+        system += "\n\nResponde con base en este contexto cuando aplique, sin inventar datos."
     try:
         model = _get_model()
         response = client.chat.completions.create(
@@ -111,29 +117,17 @@ def _fallback_response(messages, has_template_copy=False):
             f'{{"primary_color": "{primary}", "secondary_color": "{secondary}", "background_color": "#f8fafc"}}'
         )
     if "chatbot" in last_lower or "chat" in last_lower:
-        return (
-            "Puedo ayudarte a configurar un chatbot para tu tienda. "
-            "El chatbot podrá responder preguntas frecuentes sobre productos y envíos. "
-            "¿Quieres que lo active ahora?\nACCION: chatbot"
-        )
+        return "Listo, chatbot implementado en tu tienda. Revisa la vista previa. ¿Algo más?\nACCION: chatbot"
     if "validar" in last_lower or "validación" in last_lower or "api" in last_lower:
-        return (
-            "Puedo guiarte para integrar una API de validación (por ejemplo identidad o datos). "
-            "Indica qué tipo de validación necesitas y te indico los pasos.\nACCION: api_validacion"
-        )
+        return "Listo, registrado. ¿Algo más?\nACCION: api_validacion"
     if "reconocimiento facial" in last_lower or "facial" in last_lower or "rostro" in last_lower:
-        return (
-            "Puedo ayudarte a integrar reconocimiento facial para verificación de clientes. "
-            "Se configurará un módulo que podrás usar en el checkout o en áreas privadas.\nACCION: reconocimiento_facial"
-        )
+        return "Listo, registrado. ¿Algo más?\nACCION: reconocimiento_facial"
     if "envío" in last_lower or "envíos" in last_lower:
-        return "Puedo ayudarte a configurar opciones de envío para tu tienda.\nACCION: envios"
+        return "Listo, aplicado. Revisa la vista previa. ¿Algo más?\nACCION: envios"
     if "pago" in last_lower or "pagos" in last_lower:
-        return "Puedo guiarte para configurar métodos de pago en tu tienda.\nACCION: pagos"
+        return "Ya se integraron los métodos de pago en tu tienda. Revisa la vista previa. ¿Algo más?\nACCION: pagos"
     if "dropship" in last_lower:
-        return (
-            "Puedo configurar la integración con APIs de dropshipping para sincronizar inventario y pedidos con proveedores.\nACCION: dropshipping"
-        )
+        return "Listo, dropshipping implementado en tu tienda. Revisa la vista previa. ¿Algo más?\nACCION: dropshipping"
 
     return (
         "Cuéntame qué necesitas en tu tienda: por ejemplo un chatbot, validación de clientes, "
